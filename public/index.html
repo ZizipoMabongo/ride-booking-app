@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Ride Booking App</title>
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="container">
+
+    <div id="sidebar">
+
+        <h1>🚖 Ride Booking</h1>
+
+        <hr>
+
+        <h2>Pickup</h2>
+        <p id="pickup">Not selected</p>
+
+        <h2>Destination</h2>
+        <p id="destination">Not selected</p>
+
+        <hr>
+
+        <h2>Distance</h2>
+        <p id="distance">0 km</p>
+
+        <h2>Estimated Fare</h2>
+        <p id="fare">$0.00</p>
+
+        <button id="bookRide">Book Ride</button>
+
+<hr>
+
+<h2>Ride History</h2>
+
+<div id="rideHistory">
+
+    <p>No bookings yet.</p>
+
+</div>
+
+    </div>
+
+    <div id="map"></div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>
