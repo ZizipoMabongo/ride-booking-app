@@ -29,6 +29,8 @@ const distanceText = document.getElementById("distance");
 const fareText = document.getElementById("fare");
 const bookRideButton = document.getElementById("bookRide");
 const rideHistory = document.getElementById("rideHistory");
+const passengerNameInput = document.getElementById("passengerName");
+const passengerPhoneInput = document.getElementById("passengerPhone");
 
 // ================================
 // Map Click Events
@@ -147,6 +149,14 @@ map.on("click", function (event) {
 // ================================
 bookRideButton.addEventListener("click", async () => {
 
+    const passengerName = passengerNameInput.value.trim();
+    const passengerPhone = passengerPhoneInput.value.trim();
+
+    if (!passengerName || !passengerPhone) {
+        alert("Please enter your name and phone number.");
+        return;
+    }
+
     if (!pickupLocation || !destinationLocation) {
         alert("Please select both a pickup and destination.");
         return;
@@ -159,6 +169,9 @@ bookRideButton.addEventListener("click", async () => {
         Number((5 + distance * 2).toFixed(2));
 
     const booking = {
+
+        passengerName: passengerName,
+        passengerPhone: passengerPhone,
 
         pickup: {
             lat: pickupLocation.lat,
@@ -350,6 +363,11 @@ async function loadRideHistory() {
 
                     <br><br>
 
+                    <strong>👤 Passenger:</strong>
+                    ${booking.passengerName} (${booking.passengerPhone})
+
+                    <br><br>
+
                     <strong>📍 Pickup</strong><br>
                     ${booking.pickup.lat.toFixed(5)},
                     ${booking.pickup.lng.toFixed(5)}
@@ -368,7 +386,7 @@ async function loadRideHistory() {
                     <br>
 
                     <strong>💲 Fare:</strong>
-                    $${booking.fare}
+                    R${booking.fare}
 
                     <br>
 

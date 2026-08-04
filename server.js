@@ -19,6 +19,27 @@ app.use(express.json());
 app.use(express.static("public"));
 
 // ==============================
+// Auth Middleware (drivers only)
+// ==============================
+function verifyDriverToken(req, res, next) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "No token provided" });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.driver = decoded; // { id, email, name }
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: "Invalid or expired token" });
+    }
+}
+
+// ==============================
 // MongoDB Atlas Connection
 // ==============================
 const uri = process.env.MONGO_URI;
@@ -47,16 +68,18 @@ app.get("/api/test", (req, res) => {
 // ==============================
 app.post("/api/bookings", async (req, res) => {
     try {
-        const { pickup, destination, distance, fare } = req.body;
+        const { passengerName, passengerPhone, pickup, destination, distance, fare } = req.body;
 
-        if (!pickup || !destination || distance == null || fare == null) {
+        if (!passengerName || !passengerPhone || !pickup || !destination || distance == null || fare == null) {
             return res.status(400).json({
                 success: false,
-                message: "pickup, destination, distance, and fare are required."
+                message: "passengerName, passengerPhone, pickup, destination, distance, and fare are required."
             });
         }
 
         const booking = new Booking({
+            passengerName,
+            passengerPhone,
             pickup,
             destination,
             distance,
@@ -99,11 +122,20 @@ app.get("/api/bookings", async (req, res) => {
 // ==============================
 // Update Booking Status (driver accepts / updates a ride)
 // ==============================
-app.put("/api/bookings/:id", async (req, res) => {
+app.put("/api/bookings/:id", verifyDriverToken, async (req, res) => {
     try {
+        const { status } = req.body;
+
+        const updateData = { status };
+
+        if (status === "Accepted") {
+            updateData.driverId = req.driver.id;
+            updateData.driverName = req.driver.name;
+        }
+
         const booking = await Booking.findByIdAndUpdate(
             req.params.id,
-            { status: req.body.status },
+            updateData,
             { new: true }
         );
 
@@ -195,10 +227,7 @@ app.post("/api/drivers/login", async (req, res) => {
         }
 
         const token = jwt.sign(
-            {
-                id: driver._id,
-                email: driver.email
-            },
+            { id: driver._id, email: driver.email, name: driver.name },
             process.env.JWT_SECRET,
             { expiresIn: "24h" }
         );
@@ -218,6 +247,17 @@ app.post("/api/drivers/login", async (req, res) => {
             error: error.message
         });
     }
+});
+
+// ==============================
+// Get Logged-In Driver Info
+// ==============================
+app.get("/api/drivers/me", verifyDriverToken, async (req, res) => {
+    res.json({
+        id: req.driver.id,
+        name: req.driver.name,
+        email: req.driver.email
+    });
 });
 
 // ==============================
