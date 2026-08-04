@@ -206,6 +206,9 @@ app.post("/api/drivers/register", async (req, res) => {
 // ==============================
 // Driver Login
 // ==============================
+// ==============================
+// Driver Login
+// ==============================
 app.post("/api/drivers/login", async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -213,38 +216,44 @@ app.post("/api/drivers/login", async (req, res) => {
         const driver = await Driver.findOne({ email });
 
         if (!driver) {
-            return res.status(404).json({
-                message: "Driver not found"
+            return res.status(401).json({
+                message: "Invalid email or password"
             });
         }
 
-        const passwordMatch = await bcrypt.compare(password, driver.password);
+        const passwordMatch = await bcrypt.compare(
+            password,
+            driver.password
+        );
 
         if (!passwordMatch) {
             return res.status(401).json({
-                message: "Incorrect password"
+                message: "Invalid email or password"
             });
         }
 
         const token = jwt.sign(
-            { id: driver._id, email: driver.email, name: driver.name },
+            {
+                id: driver._id,
+                email: driver.email,
+                name: driver.name
+            },
             process.env.JWT_SECRET,
-            { expiresIn: "24h" }
+            {
+                expiresIn: "24h"
+            }
         );
 
         res.json({
             message: "Login successful",
-            token,
-            driver: {
-                id: driver._id,
-                name: driver.name,
-                email: driver.email
-            }
+            token
         });
 
     } catch (error) {
+        console.error(error);
+
         res.status(500).json({
-            error: error.message
+            message: "Server error"
         });
     }
 });
@@ -273,5 +282,42 @@ app.get("/test", (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
+    // ==============================
+// Driver Registration
+// ==============================
+app.post("/api/drivers/register", async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+
+        const existingDriver = await Driver.findOne({ email });
+
+        if (existingDriver) {
+            return res.status(400).json({
+                message: "Driver already exists"
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const driver = new Driver({
+            name,
+            email,
+            password: hashedPassword
+        });
+
+        await driver.save();
+
+        res.status(201).json({
+            message: "Driver registered successfully"
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message: "Server error"
+        });
+    }
+});
     console.log(`🚀 Server running at http://localhost:${PORT}`);
 });

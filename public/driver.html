@@ -1,52 +1,171 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>Driver Dashboard</title>
 
-    <style>
-        body {
-            font-family: Arial;
-            background: #f4f4f4;
-            padding: 20px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        h1 {
-            color: #1f2937;
-        }
+<title>Driver Dashboard</title>
 
-        .ride {
-            background:white;
-            padding:20px;
-            margin:15px;
-            border-radius:10px;
-            box-shadow:0 2px 5px #ccc;
-        }
-
-        button {
-            background:#2563eb;
-            color:white;
-            border:none;
-            padding:10px 20px;
-            border-radius:5px;
-            cursor:pointer;
-        }
-
-        button:hover {
-            background:#1d4ed8;
-        }
-
-    </style>
+<link rel="stylesheet" href="style.css">
 
 </head>
 
 <body>
 
-<h1>🚗 Driver Dashboard</h1>
+<header class="topbar">
 
-<div id="rides"></div>
+    <div class="logo">
+        🚖 Driver Dashboard
+    </div>
 
+    <div class="nav-buttons">
+
+        <button id="statusBtn" class="primary-btn">
+            🟢 Online
+        </button>
+
+        <button id="logoutBtn" class="secondary-btn">
+            Logout
+        </button>
+
+    </div>
+
+</header>
+
+<div class="main-layout">
+
+    <!-- Left Panel -->
+
+    <aside class="sidebar">
+
+        <div class="welcome-card">
+
+            <h2 id="driverName">
+                Welcome Driver 👋
+            </h2>
+
+            <p>
+                Ready to accept new rides.
+            </p>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Today's Summary</h3>
+
+            <div class="summary-row">
+
+                <span>🚖 Trips</span>
+
+                <strong id="tripCount">
+                    0
+                </strong>
+
+            </div>
+
+            <div class="summary-row">
+
+                <span>💰 Earnings</span>
+
+                <strong id="earnings">
+                    R0
+                </strong>
+
+            </div>
+
+            <div class="summary-row">
+
+                <span>📍 Active Rides</span>
+
+                <strong id="activeRides">
+                    0
+                </strong>
+
+            </div>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Status</h3>
+
+            <p id="driverStatus">
+                🟢 Online
+            </p>
+
+        </div>
+
+    </aside>
+
+    <!-- Right Panel -->
+
+    <section
+        style="
+        flex:1;
+        padding:30px;
+        overflow-y:auto;
+        ">
+
+        <h2
+        style="
+        color:#1E3A8A;
+        margin-bottom:20px;
+        ">
+            Incoming Ride Requests
+        </h2>
+
+        <div id="rides">
+
+            <!-- driver.js inserts rides here -->
+
+        </div>
+
+    </section>
+
+</div>
+
+<script>
+
+const logout=document.getElementById("logoutBtn");
+
+logout.addEventListener("click",()=>{
+
+localStorage.removeItem("driverToken");
+
+window.location.href="login.html";
+
+});
+
+const statusBtn=document.getElementById("statusBtn");
+const status=document.getElementById("driverStatus");
+
+let online=true;
+
+statusBtn.addEventListener("click",()=>{
+
+online=!online;
+
+if(online){
+
+statusBtn.innerHTML="🟢 Online";
+status.innerHTML="🟢 Online";
+
+}else{
+
+statusBtn.innerHTML="🔴 Offline";
+status.innerHTML="🔴 Offline";
+
+}
+
+});
+
+</script>
 
 <script src="driver.js"></script>
 
 </body>
+
 </html>

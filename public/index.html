@@ -3,68 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
- 
+
     <title>Ride Booking App</title>
- 
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    >
- 
+
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
- 
-<div id="container">
- 
-    <div id="sidebar">
- 
-        <h1>🚖 Ride Booking</h1>
- 
-        <hr>
- 
-        <h2>Your Name</h2>
-        <input type="text" id="passengerName" placeholder="Enter your name">
- 
-        <h2>Phone Number</h2>
-        <input type="tel" id="passengerPhone" placeholder="Enter your phone number">
- 
-        <hr>
- 
-        <h2>Pickup</h2>
-        <p id="pickup">Not selected</p>
- 
-        <h2>Destination</h2>
-        <p id="destination">Not selected</p>
- 
-        <hr>
- 
-        <h2>Distance</h2>
-        <p id="distance">0 km</p>
- 
-        <h2>Estimated Fare</h2>
-        <p id="fare">$0.00</p>
- 
-        <button id="bookRide">Book Ride</button>
- 
-        <hr>
- 
-        <h2>Ride History</h2>
- 
-        <div id="rideHistory">
- 
-            <p>No bookings yet.</p>
- 
-        </div>
- 
+
+<header class="topbar">
+
+    <div class="logo">
+        🚖 Ride Booking
     </div>
- 
-    <div id="map"></div>
- 
+
+    <div class="nav-buttons">
+
+        <a href="login.html">
+            <button class="secondary-btn">
+                Driver Login
+            </button>
+        </a>
+
+        <a href="register.html">
+            <button class="primary-btn">
+                Register Driver
+            </button>
+        </a>
+
+    </div>
+
+</header>
+
+<div class="main-layout">
+
+    <!-- Sidebar -->
+
+    <aside class="sidebar">
+
+        <div class="welcome-card">
+
+            <h2>Welcome 👋</h2>
+
+            <p>
+                Book a safe and affordable ride anywhere.
+            </p>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Passenger Details</h3>
+
+            <label>Full Name</label>
+
+            <input
+                type="text"
+                id="passengerName"
+                placeholder="Enter your name">
+
+            <label>Phone Number</label>
+
+            <input
+                type="tel"
+                id="passengerPhone"
+                placeholder="Enter your phone number">
+
+        </div>
+
+        <div class="card">
+
+            <h3>Trip Details</h3>
+
+            <div class="trip-info">
+
+                <strong>📍 Pickup</strong>
+
+                <p id="pickup">
+                    Click on the map
+                </p>
+
+            </div>
+
+            <div class="trip-info">
+
+                <strong>🎯 Destination</strong>
+
+                <p id="destination">
+                    Click on the map
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="card fare-card">
+
+            <h3>Ride Summary</h3>
+
+            <div class="summary-row">
+
+                <span>Distance</span>
+
+                <strong id="distance">
+                    0 km
+                </strong>
+
+            </div>
+
+            <div class="summary-row">
+
+                <span>Estimated Fare</span>
+
+                <strong id="fare">
+                    R0.00
+                </strong>
+
+            </div>
+
+            <button id="bookRide" class="book-btn">
+                🚖 Book Ride
+            </button>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Recent Trips</h3>
+
+            <div id="rideHistory">
+
+                <p>No bookings yet.</p>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+    <!-- Map -->
+
+    <section class="map-container">
+
+        <div id="map"></div>
+
+    </section>
+
 </div>
- 
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script src="script.js"></script>
- 
+
 </body>
 </html>

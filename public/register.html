@@ -3,19 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver Login</title>
+    <title>Driver Registration</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
-    <h1>Driver Login</h1>
+    <h1>Driver Registration</h1>
 
-    <form id="loginForm">
+    <form id="registerForm">
+
+        <input
+            type="text"
+            id="name"
+            placeholder="Full Name"
+            required
+        >
+
         <input
             type="email"
             id="email"
-            placeholder="Email Address"
+            placeholder="Email"
             required
         >
 
@@ -27,14 +35,16 @@
         >
 
         <button type="submit">
-            Login
+            Register
         </button>
+
     </form>
 
     <p id="message"></p>
+
 </div>
 
-<script src="login.js"></script>
+<script src="register.js"></script>
 
 </body>
 </html>
