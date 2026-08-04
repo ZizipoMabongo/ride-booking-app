@@ -1,4 +1,11 @@
 {
+  "name": "ride-booking-app",
+  "version": "1.0.0",
+  "description": "Ride Booking App",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
@@ -6,8 +13,5 @@
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.5.0",
     "mongoose": "^9.8.1"
-  },
-  "allowScripts": {
-    "bcrypt@6.0.0": true
   }
 }
