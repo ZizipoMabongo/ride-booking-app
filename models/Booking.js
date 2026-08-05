@@ -10,7 +10,10 @@ const bookingSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-
+vehicle: {
+    type: String,
+    default: "Economy"
+},
     pickup: {
         lat: Number,
         lng: Number

@@ -20,6 +20,12 @@ let routeLine = null;
 let pickupLocation = null;
 let destinationLocation = null;
 
+const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
+const NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse";
+
+let pickupSearchTimer = null;
+let destinationSearchTimer = null;
+
 // ================================
 // Sidebar Elements
 // ================================
@@ -32,117 +38,315 @@ const rideHistory = document.getElementById("rideHistory");
 const passengerNameInput = document.getElementById("passengerName");
 const passengerPhoneInput = document.getElementById("passengerPhone");
 
+const pickupResultsEl = document.getElementById("pickupResults");
+const destinationResultsEl = document.getElementById("destinationResults");
+
+// Vehicle Selection
+const vehicleCards = document.querySelectorAll(".vehicle-card");
+
+let selectedVehicle = {
+    type: "Economy",
+    baseFare: 25
+};
+
+vehicleCards.forEach(card => {
+
+    card.addEventListener("click", () => {
+
+        vehicleCards.forEach(c => c.classList.remove("selected"));
+
+        card.classList.add("selected");
+
+        selectedVehicle.type = card.dataset.type;
+        selectedVehicle.baseFare = Number(card.dataset.basefare);
+
+        recalcFare();
+
+    });
+
+});
+
+// ================================
+// Shared: recalc distance + fare + route whenever both points are known
+// ================================
+function recalcFare() {
+
+    if (!pickupLocation || !destinationLocation) {
+        return;
+    }
+
+    const distance =
+        Number((pickupLocation.distanceTo(destinationLocation) / 1000).toFixed(2));
+
+    let pricePerKm = 2;
+
+    switch (selectedVehicle.type) {
+
+        case "XL":
+            pricePerKm = 3;
+            break;
+
+        case "Premium":
+            pricePerKm = 5;
+            break;
+
+        default:
+            pricePerKm = 2;
+
+    }
+
+    const fare =
+        (selectedVehicle.baseFare + distance * pricePerKm).toFixed(2);
+
+    distanceText.textContent = `${distance} km`;
+    fareText.textContent = `R${fare}`;
+
+    // Redraw route
+    if (routeLine) {
+        map.removeLayer(routeLine);
+    }
+
+    routeLine = L.polyline(
+        [pickupLocation, destinationLocation],
+        {
+            color: "blue",
+            weight: 5
+        }
+    ).addTo(map);
+
+    map.fitBounds(routeLine.getBounds());
+
+}
+
+// ================================
+// Shared: place / move the pickup marker
+// ================================
+function setPickup(latlng, addressLabel) {
+
+    if (pickupMarker) {
+        map.removeLayer(pickupMarker);
+    }
+
+    pickupMarker = L.marker(latlng)
+        .addTo(map)
+        .bindPopup("📍 Pickup Location");
+
+    pickupLocation = latlng;
+
+    pickupText.value = addressLabel || `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
+
+    recalcFare();
+
+}
+
+// ================================
+// Shared: place / move the destination marker
+// ================================
+function setDestination(latlng, addressLabel) {
+
+    if (destinationMarker) {
+        map.removeLayer(destinationMarker);
+    }
+
+    destinationMarker = L.marker(latlng)
+        .addTo(map)
+        .bindPopup("🏁 Destination");
+
+    destinationLocation = latlng;
+
+    destinationText.value = addressLabel || `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
+
+    recalcFare();
+
+}
+
 // ================================
 // Map Click Events
+// (1st click = pickup, 2nd = destination, 3rd = reset + new pickup)
 // ================================
 map.on("click", function (event) {
 
-    // ============================
     // FIRST CLICK (Pickup)
-    // ============================
     if (!pickupMarker) {
 
-        pickupMarker = L.marker(event.latlng)
-            .addTo(map)
-            .bindPopup("📍 Pickup Location")
-            .openPopup();
-
-        pickupLocation = event.latlng;
-
-        pickupText.textContent =
-            `${pickupLocation.lat.toFixed(5)}, ${pickupLocation.lng.toFixed(5)}`;
+        setPickup(event.latlng);
+        reverseGeocode(event.latlng, pickupText);
 
     }
 
-    // ============================
     // SECOND CLICK (Destination)
-    // ============================
     else if (!destinationMarker) {
 
-        destinationMarker = L.marker(event.latlng)
-            .addTo(map)
-            .bindPopup("🏁 Destination")
-            .openPopup();
-
-        destinationLocation = event.latlng;
-
-        destinationText.textContent =
-            `${destinationLocation.lat.toFixed(5)}, ${destinationLocation.lng.toFixed(5)}`;
-
-        // Calculate distance
-        const distanceMeters =
-            pickupLocation.distanceTo(destinationLocation);
-
-        const distanceKm =
-            (distanceMeters / 1000).toFixed(2);
-
-        distanceText.textContent =
-            `${distanceKm} km`;
-
-        // Calculate fare
-        const baseFare = 25;
-        const pricePerKm = 2;
-
-        const fare =
-            (baseFare + parseFloat(distanceKm) * pricePerKm).toFixed(2);
-
-        fareText.textContent =
-    `R${fare}`;
-
-        // Remove previous route
-        if (routeLine) {
-            map.removeLayer(routeLine);
-        }
-
-        // Draw route
-        routeLine = L.polyline(
-            [pickupLocation, destinationLocation],
-            {
-                color: "blue",
-                weight: 5
-            }
-        ).addTo(map);
-
-        // Zoom to route
-        map.fitBounds(routeLine.getBounds());
+        setDestination(event.latlng);
+        reverseGeocode(event.latlng, destinationText);
 
     }
 
-    // ============================
-    // THIRD CLICK (Reset)
-    // ============================
+    // THIRD CLICK (Reset, then start a new pickup)
     else {
 
-        // Remove markers
-        map.removeLayer(pickupMarker);
-        map.removeLayer(destinationMarker);
+        clearCurrentRide();
 
-        // Remove route
-        if (routeLine) {
-            map.removeLayer(routeLine);
-            routeLine = null;
-        }
+        setPickup(event.latlng);
+        reverseGeocode(event.latlng, pickupText);
 
-        // Reset markers
-        pickupMarker = L.marker(event.latlng)
-            .addTo(map)
-            .bindPopup("📍 Pickup Location")
-            .openPopup();
-
-        pickupLocation = event.latlng;
-        destinationLocation = null;
-        destinationMarker = null;
-
-        // Reset sidebar
-        pickupText.textContent =
-            `${pickupLocation.lat.toFixed(5)}, ${pickupLocation.lng.toFixed(5)}`;
-
-        destinationText.textContent = "Not selected";
-        distanceText.textContent = "0 km";
-        fareText.textContent = "R0.00";
     }
 
 });
+
+// ================================
+// Address search (autocomplete) — Pickup
+// ================================
+pickupText.addEventListener("input", () => {
+
+    clearTimeout(pickupSearchTimer);
+    const query = pickupText.value.trim();
+
+    if (query.length < 3) {
+        hideResults(pickupResultsEl);
+        return;
+    }
+
+    pickupSearchTimer = setTimeout(() => {
+
+        runSearch(query, pickupResultsEl, (result) => {
+
+            const latlng = L.latLng(parseFloat(result.lat), parseFloat(result.lon));
+
+            hideResults(pickupResultsEl);
+            setPickup(latlng, result.display_name);
+            map.panTo(latlng);
+
+        });
+
+    }, 400);
+
+});
+
+// ================================
+// Address search (autocomplete) — Destination
+// ================================
+destinationText.addEventListener("input", () => {
+
+    clearTimeout(destinationSearchTimer);
+    const query = destinationText.value.trim();
+
+    if (query.length < 3) {
+        hideResults(destinationResultsEl);
+        return;
+    }
+
+    destinationSearchTimer = setTimeout(() => {
+
+        runSearch(query, destinationResultsEl, (result) => {
+
+            const latlng = L.latLng(parseFloat(result.lat), parseFloat(result.lon));
+
+            hideResults(destinationResultsEl);
+            setDestination(latlng, result.display_name);
+            map.panTo(latlng);
+
+        });
+
+    }, 400);
+
+});
+
+async function runSearch(query, resultsEl, onSelect) {
+
+    try {
+
+        const url = `${NOMINATIM_URL}?format=json&addressdetails=0&limit=5&countrycodes=za&q=${encodeURIComponent(query)}`;
+
+        const response = await fetch(url, {
+            headers: { "Accept-Language": "en" }
+        });
+
+        const results = await response.json();
+
+        renderResults(results, resultsEl, onSelect);
+
+    } catch (error) {
+
+        console.error("Address search failed:", error);
+        resultsEl.innerHTML = `<div class="search-result-empty">Search unavailable, try again</div>`;
+        resultsEl.classList.add("visible");
+
+    }
+
+}
+
+function renderResults(results, resultsEl, onSelect) {
+
+    resultsEl.innerHTML = "";
+
+    if (!results.length) {
+        resultsEl.innerHTML = `<div class="search-result-empty">No matches found</div>`;
+        resultsEl.classList.add("visible");
+        return;
+    }
+
+    results.forEach((result) => {
+
+        const item = document.createElement("div");
+        item.className = "search-result-item";
+        item.textContent = result.display_name;
+
+        item.addEventListener("click", () => onSelect(result));
+
+        resultsEl.appendChild(item);
+
+    });
+
+    resultsEl.classList.add("visible");
+
+}
+
+function hideResults(resultsEl) {
+    resultsEl.classList.remove("visible");
+    resultsEl.innerHTML = "";
+}
+
+// Hide dropdowns when clicking elsewhere on the page
+document.addEventListener("click", (e) => {
+
+    if (!pickupText.contains(e.target) && !pickupResultsEl.contains(e.target)) {
+        hideResults(pickupResultsEl);
+    }
+
+    if (!destinationText.contains(e.target) && !destinationResultsEl.contains(e.target)) {
+        hideResults(destinationResultsEl);
+    }
+
+});
+
+// ================================
+// Reverse geocoding (map click -> fill text input with an address)
+// ================================
+async function reverseGeocode(latlng, inputEl) {
+
+    try {
+
+        const url = `${NOMINATIM_REVERSE_URL}?format=json&lat=${latlng.lat}&lon=${latlng.lng}`;
+
+        const response = await fetch(url, {
+            headers: { "Accept-Language": "en" }
+        });
+
+        const result = await response.json();
+
+        if (result.display_name) {
+            inputEl.value = result.display_name;
+        }
+
+    } catch (error) {
+
+        console.error("Reverse geocoding failed:", error);
+        // Leave the lat/lng text already set by setPickup/setDestination as a fallback
+
+    }
+
+}
 
 // ================================
 // Book Ride
@@ -165,13 +369,33 @@ bookRideButton.addEventListener("click", async () => {
     const distance =
         Number((pickupLocation.distanceTo(destinationLocation) / 1000).toFixed(2));
 
-    const fare =
-        Number((5 + distance * 2).toFixed(2));
+
+        let pricePerKm = 2;
+
+switch (selectedVehicle.type) {
+
+    case "XL":
+        pricePerKm = 3;
+        break;
+
+    case "Premium":
+        pricePerKm = 5;
+        break;
+
+    default:
+        pricePerKm = 2;
+
+}
+
+const fare =
+    Number((selectedVehicle.baseFare + distance * pricePerKm).toFixed(2));
 
     const booking = {
 
         passengerName: passengerName,
         passengerPhone: passengerPhone,
+       
+        vehicle: selectedVehicle.type,
 
         pickup: {
             lat: pickupLocation.lat,
@@ -316,10 +540,10 @@ function clearCurrentRide() {
     pickupLocation = null;
     destinationLocation = null;
 
-    pickupText.textContent = "Not selected";
-    destinationText.textContent = "Not selected";
+    pickupText.value = "";
+    destinationText.value = "";
     distanceText.textContent = "0 km";
-    fareText.textContent = "$0.00";
+    fareText.textContent = "R0.00";
 
 }
 

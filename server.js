@@ -52,15 +52,15 @@ mongoose.connect(uri)
         console.error("❌ MongoDB connection error:");
         console.error(err.message);
     });
-
 // ==============================
 // Test API
 // ==============================
 app.get("/api/test", (req, res) => {
+
     res.json({
-        success: true,
-        message: "API is working!"
+        message: "RideConnect SA API is running."
     });
+
 });
 
 // ==============================
@@ -107,16 +107,27 @@ app.post("/api/bookings", async (req, res) => {
 // Get All Bookings
 // ==============================
 app.get("/api/bookings", async (req, res) => {
+
     try {
-        const bookings = await Booking.find().sort({ createdAt: -1 });
-        res.status(200).json(bookings);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch bookings."
+
+        const bookings = await Booking.find({
+            status: "Pending"
+        }).sort({
+            createdAt: -1
         });
+
+        res.json(bookings);
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Server error"
+        });
+
     }
+
 });
 
 // ==============================
@@ -206,9 +217,6 @@ app.post("/api/drivers/register", async (req, res) => {
 // ==============================
 // Driver Login
 // ==============================
-// ==============================
-// Driver Login
-// ==============================
 app.post("/api/drivers/login", async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -245,9 +253,14 @@ app.post("/api/drivers/login", async (req, res) => {
         );
 
         res.json({
-            message: "Login successful",
-            token
-        });
+    message: "Login successful",
+    token,
+    driver: {
+        id: driver._id,
+        name: driver.name,
+        email: driver.email
+    }
+});
 
     } catch (error) {
         console.error(error);
@@ -275,49 +288,55 @@ app.get("/api/drivers/me", verifyDriverToken, async (req, res) => {
 app.get("/test", (req, res) => {
     res.send("Server is reading this file");
 });
+// ==============================
+// Driver Accept Ride
+// ==============================
+app.put("/api/bookings/:id/accept", verifyDriverToken, async (req, res) => {
 
+    try {
+
+        const booking = await Booking.findById(req.params.id);
+
+        if (!booking) {
+            return res.status(404).json({
+                message: "Booking not found"
+            });
+        }
+
+        if (booking.status !== "Pending") {
+            return res.status(400).json({
+                message: "Ride already accepted"
+            });
+        }
+
+        booking.status = "Accepted";
+        booking.driverId = req.driver.id;
+        booking.driverName = req.driver.name;
+
+        await booking.save();
+
+        res.json({
+            message: "Ride accepted successfully",
+            booking
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Server error"
+        });
+
+    }
+
+});
 // ==============================
 // Start Server (LAST)
 // ==============================
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    // ==============================
-// Driver Registration
-// ==============================
-app.post("/api/drivers/register", async (req, res) => {
-    try {
-        const { name, email, password } = req.body;
-
-        const existingDriver = await Driver.findOne({ email });
-
-        if (existingDriver) {
-            return res.status(400).json({
-                message: "Driver already exists"
-            });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const driver = new Driver({
-            name,
-            email,
-            password: hashedPassword
-        });
-
-        await driver.save();
-
-        res.status(201).json({
-            message: "Driver registered successfully"
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-    }
-});
+   
     console.log(`🚀 Server running at http://localhost:${PORT}`);
 });

@@ -24,6 +24,7 @@ form.addEventListener("submit", async (e) => {
         if (response.ok) {
             // Save JWT token
             localStorage.setItem("driverToken", data.token);
+            localStorage.setItem("driverInfo", JSON.stringify(data.driver));
 
             message.style.color = "green";
             message.textContent = "Login successful! Redirecting...";
@@ -39,5 +40,26 @@ form.addEventListener("submit", async (e) => {
         console.error(error);
         message.style.color = "red";
         message.textContent = "Unable to connect to the server.";
+    }
+});
+const token = jwt.sign(
+    {
+        id: driver._id,
+        email: driver.email,
+        name: driver.name
+    },
+    process.env.JWT_SECRET,
+    {
+        expiresIn: "24h"
+    }
+);
+
+res.json({
+    message: "Login successful",
+    token: token,
+    driver: {
+        id: driver._id,
+        name: driver.name,
+        email: driver.email
     }
 });

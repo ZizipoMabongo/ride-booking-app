@@ -1,69 +1,33 @@
-const token = localStorage.getItem("driverToken");
-const driverInfo = JSON.parse(localStorage.getItem("driverInfo"));
+const mongoose = require("mongoose");
 
-if (!token) {
-    window.location.href = "login.html";
-}
+// models/Driver.js
+const driverSchema = new mongoose.Schema({
 
-if (driverInfo) {
-    document.getElementById("welcome").innerHTML = `Welcome, ${driverInfo.name}`;
-}
+    name: {
+        type: String,
+        required: true
+    },
 
-// ================================
-// Load available rides
-// ================================
-async function loadRides() {
-    const response = await fetch("/api/bookings");
-    const rides = await response.json();
+    email: {
+        type: String,
+        required: true,
+        unique: true
+    },
 
-    const container = document.getElementById("rides");
-    container.innerHTML = "";
+    password: {
+        type: String,
+        required: true
+    },
 
-    rides.forEach(ride => {
-        if (ride.status === "Pending") {
-            container.innerHTML += `
-            <div class="ride">
-                <h3>Ride Request</h3>
-                <p>Passenger: ${ride.passengerName} (${ride.passengerPhone})</p>
-                <p>Pickup: ${ride.pickup.lat}, ${ride.pickup.lng}</p>
-                <p>Destination: ${ride.destination.lat}, ${ride.destination.lng}</p>
-                <p>Distance: ${ride.distance} km</p>
-                <p>Fare: R${ride.fare}</p>
-                <button onclick="acceptRide('${ride._id}')">Accept Ride</button>
-            </div>
-            `;
-        }
-    });
-}
-
-// ================================
-// Accept ride
-// ================================
-async function acceptRide(id) {
-    const response = await fetch(`/api/bookings/${id}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: "Accepted" })
-    });
-
-    if (response.status === 401) {
-        alert("Session expired. Please log in again.");
-        logout();
-        return;
+    status: {
+        type: String,
+        default: "Offline"
     }
 
-    await response.json();
-    alert("Ride accepted successfully!");
-    loadRides();
-}
+});
 
-function logout() {
-    localStorage.removeItem("driverToken");
-    localStorage.removeItem("driverInfo");
-    window.location.href = "login.html";
-}
 
-loadRides();
+module.exports = mongoose.model(
+    "Driver",
+    driverSchema
+);

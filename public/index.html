@@ -17,26 +17,64 @@
 <header class="topbar">
 
     <div class="logo">
-        🚖 Ride Booking
+
+        <span class="logo-icon">🚖</span>
+
+        <div>
+
+            <h2>RideConnect SA</h2>
+
+            <small>Connecting South Africans, One Ride at a Time.</small>
+
+        </div>
+
     </div>
 
-    <div class="nav-buttons">
+    <nav class="nav-buttons">
+
+        <a href="index.html">
+            <button class="secondary-btn">Book Ride</button>
+        </a>
 
         <a href="login.html">
-            <button class="secondary-btn">
-                Driver Login
-            </button>
+            <button class="secondary-btn">Driver Login</button>
         </a>
 
         <a href="register.html">
-            <button class="primary-btn">
-                Register Driver
-            </button>
+            <button class="primary-btn">Become a Driver</button>
         </a>
+
+    </nav>
+
+</header>
+
+<section class="hero">
+
+    <div class="hero-text">
+
+        <h1>Ride Smarter.<br>Travel Safer.</h1>
+
+        <p>
+
+            RideConnect SA makes travelling across South Africa simple,
+            reliable and affordable.
+
+            Book your ride in seconds and track your journey with confidence.
+
+        </p>
+
+        <div class="hero-buttons">
+
+            <button class="primary-btn" onclick="document.getElementById('passengerName').focus()">
+                Book Your Ride
+            </button>
+
+        </div>
 
     </div>
 
-</header>
+</section>
+
 
 <div class="main-layout">
 
@@ -82,9 +120,17 @@
 
                 <strong>📍 Pickup</strong>
 
-                <p id="pickup">
-                    Click on the map
-                </p>
+                <div class="location-input-wrap">
+
+                    <input
+                        type="text"
+                        id="pickup"
+                        placeholder="Type an address or click the map"
+                        autocomplete="off">
+
+                    <div id="pickupResults" class="search-results"></div>
+
+                </div>
 
             </div>
 
@@ -92,16 +138,50 @@
 
                 <strong>🎯 Destination</strong>
 
-                <p id="destination">
-                    Click on the map
-                </p>
+                <div class="location-input-wrap">
+
+                    <input
+                        type="text"
+                        id="destination"
+                        placeholder="Type an address or click the map"
+                        autocomplete="off">
+
+                    <div id="destinationResults" class="search-results"></div>
+
+                </div>
 
             </div>
 
         </div>
 
         <div class="card fare-card">
+<div class="card">
 
+    <h3>Select Your Ride</h3>
+
+    <div class="vehicle-options">
+
+        <div class="vehicle-card selected" data-type="Economy" data-basefare="25">
+            <h4>🚗 Economy</h4>
+            <p>Affordable everyday rides</p>
+            <strong>From R25</strong>
+        </div>
+
+        <div class="vehicle-card" data-type="XL" data-basefare="45">
+            <h4>🚙 XL</h4>
+            <p>Extra space for groups</p>
+            <strong>From R45</strong>
+        </div>
+
+        <div class="vehicle-card" data-type="Premium" data-basefare="70">
+            <h4>⭐ Premium</h4>
+            <p>Luxury ride experience</p>
+            <strong>From R70</strong>
+        </div>
+
+    </div>
+
+</div>
             <h3>Ride Summary</h3>
 
             <div class="summary-row">
@@ -144,13 +224,17 @@
 
     </aside>
 
-    <!-- Map -->
+   <!-- Map Area -->
+<section class="map-container">
 
-    <section class="map-container">
+    <div class="map-header">
+        <h2>🗺️ Live Map</h2>
+        <p>Search an address, or click the map: first click sets pickup, second sets destination.</p>
+    </div>
 
-        <div id="map"></div>
+    <div id="map"></div>
 
-    </section>
+</section>
 
 </div>
 

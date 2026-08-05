@@ -88,9 +88,12 @@ body{
 .main-layout{
 
     display:flex;
-    height:calc(100vh - 75px);
+    min-height:950px;
+    align-items:stretch;
 
 }
+
+
 
 /* ===========================
    Sidebar
@@ -178,6 +181,75 @@ input:focus{
 }
 
 /* ===========================
+   Location Search (pickup / destination)
+=========================== */
+
+.location-input-wrap{
+
+    position:relative;
+
+}
+
+.location-input-wrap input{
+
+    margin-bottom:0;
+
+}
+
+.search-results{
+
+    position:absolute;
+    top:calc(100% + 4px);
+    left:0;
+    right:0;
+    background:white;
+    border:1px solid #E2E8F0;
+    border-radius:12px;
+    box-shadow:0 12px 25px rgba(0,0,0,.15);
+    max-height:220px;
+    overflow-y:auto;
+    z-index:1000;
+    display:none;
+
+}
+
+.search-results.visible{
+
+    display:block;
+
+}
+
+.search-result-item{
+
+    padding:12px 14px;
+    font-size:14px;
+    cursor:pointer;
+    border-bottom:1px solid #F1F5F9;
+    color:#334155;
+
+}
+
+.search-result-item:last-child{
+
+    border-bottom:none;
+
+}
+
+.search-result-item:hover{
+
+    background:#EEF3F8;
+
+}
+
+.search-result-empty{
+
+    padding:12px 14px;
+    font-size:14px;
+    color:#94A3B8;
+
+}
+
+/* ===========================
    Fare Card
 =========================== */
 
@@ -247,14 +319,40 @@ input:focus{
 .map-container{
 
     flex:1;
-    position:relative;
+    display:flex;
+    flex-direction:column;
+    background:white;
+    padding:20px;
+
+}
+
+.map-header{
+
+    margin-bottom:15px;
+
+}
+
+.map-header h2{
+
+    color:#1E3A8A;
+    margin-bottom:5px;
+
+}
+
+.map-header p{
+
+    color:#64748B;
 
 }
 
 #map{
 
-    width:100%;
-    height:100%;
+    flex:1;
+    min-height:850px;
+    border-radius:18px;
+    overflow:hidden;
+    border:3px solid #CBD5E1;
+    box-shadow:0 12px 25px rgba(0,0,0,.08);
 
 }
 
@@ -296,7 +394,7 @@ input:focus{
 
 #map{
 
-    height:500px;
+    height:600px;
 
 }
 
@@ -313,5 +411,122 @@ input:focus{
     margin-top:15px;
 
 }
+
+}
+/* ===========================
+   HERO SECTION
+=========================== */
+
+.hero{
+
+    background:linear-gradient(135deg,#0F172A,#1E3A8A);
+    color:white;
+    padding:60px 80px;
+
+}
+
+.hero-text{
+
+    max-width:700px;
+
+}
+
+.hero h1{
+
+    color:white;
+    font-size:52px;
+    line-height:1.2;
+    margin-bottom:20px;
+
+}
+
+.hero p{
+
+    font-size:18px;
+    line-height:1.8;
+    opacity:.95;
+    margin-bottom:30px;
+
+}
+
+.logo{
+
+    display:flex;
+    align-items:center;
+    gap:15px;
+
+}
+
+.logo h2{
+
+    color:white;
+
+}
+
+.logo small{
+
+    color:#CBD5E1;
+
+}
+
+.logo-icon{
+
+    font-size:42px;
+
+}
+
+.hero-buttons{
+
+    display:flex;
+    gap:20px;
+
+}
+/* ===========================
+   Vehicle Selection
+=========================== */
+
+.vehicle-options{
+
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+
+}
+
+.vehicle-card{
+
+    border:2px solid #CBD5E1;
+    border-radius:14px;
+    padding:15px;
+    cursor:pointer;
+    transition:.3s;
+    background:white;
+
+}
+
+.vehicle-card:hover{
+
+    transform:translateY(-3px);
+    border-color:#2563EB;
+
+}
+
+.vehicle-card.selected{
+
+    border-color:#FBBF24;
+    background:#FEF3C7;
+
+}
+
+.vehicle-card h4{
+
+    margin-bottom:6px;
+
+}
+
+.vehicle-card p{
+
+    color:#64748B;
+    margin-bottom:8px;
 
 }
