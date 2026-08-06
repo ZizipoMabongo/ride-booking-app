@@ -8,7 +8,7 @@
 
 <title>Driver Dashboard</title>
 
-<link rel="stylesheet" href="driver.css">
+<link rel="stylesheet" href="style.css">
 
 </head>
 
@@ -128,16 +128,6 @@
 </div>
 
 <script>
-
-const logout=document.getElementById("logoutBtn");
-
-logout.addEventListener("click",()=>{
-
-localStorage.removeItem("driverToken");
-
-window.location.href="login.html";
-
-});
 
 const statusBtn=document.getElementById("statusBtn");
 const status=document.getElementById("driverStatus");
