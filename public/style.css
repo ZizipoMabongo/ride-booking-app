@@ -22,12 +22,14 @@ body{
 
 .topbar{
     width:100%;
-    height:75px;
+    min-height:75px;
     background:#0F172A;
     display:flex;
+    flex-wrap:wrap;
     justify-content:space-between;
     align-items:center;
-    padding:0 40px;
+    gap:12px;
+    padding:15px 40px;
     box-shadow:0 5px 20px rgba(0,0,0,.15);
 }
 
@@ -39,6 +41,8 @@ body{
 
 .nav-buttons{
     display:flex;
+    flex-wrap:wrap;
+    justify-content:flex-end;
     gap:15px;
 }
 
@@ -528,5 +532,181 @@ input:focus{
 
     color:#64748B;
     margin-bottom:8px;
+
+}
+/* ===========================
+   Passenger Auth Nav
+=========================== */
+
+#passengerAuthButtons{
+
+    display:inline-flex;
+    gap:15px;
+
+}
+
+/* ===========================
+   Current Ride Card
+=========================== */
+
+.current-ride-card{
+
+    background:linear-gradient(135deg,#DBEAFE,#FFFFFF);
+    border:2px solid #2563EB;
+
+}
+
+.current-ride-card h3{
+
+    color:#1E3A8A;
+
+}
+
+.current-ride-card p{
+
+    font-size:15px;
+    color:#1E293B;
+    margin-top:4px;
+
+}
+
+/* ===========================
+   Auth Pages (login / register)
+=========================== */
+
+.auth-page{
+
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding:60px 20px;
+    min-height:calc(100vh - 75px);
+    background:#EEF3F8;
+
+}
+
+.auth-card{
+
+    width:100%;
+    max-width:420px;
+
+}
+
+.auth-card h3{
+
+    font-size:22px;
+    margin-bottom:6px;
+
+}
+
+.auth-subtext{
+
+    color:#64748B;
+    margin-bottom:20px;
+    font-size:14px;
+
+}
+
+.auth-message{
+
+    text-align:center;
+    margin-top:10px;
+    font-size:14px;
+    min-height:20px;
+
+}
+
+.auth-switch{
+
+    text-align:center;
+    margin-top:16px;
+    font-size:14px;
+    color:#475569;
+
+}
+
+.auth-switch a{
+
+    color:#2563EB;
+    font-weight:600;
+    text-decoration:none;
+
+}
+
+.auth-switch a:hover{
+
+    text-decoration:underline;
+
+}
+
+/* ===========================
+   My Rides Page
+=========================== */
+
+.myrides-page{
+
+    max-width:900px;
+    margin:0 auto;
+    padding:40px 20px;
+
+}
+
+.myrides-page h2{
+
+    color:#1E3A8A;
+    margin-bottom:25px;
+
+}
+
+.ride-history-card{
+
+    margin-bottom:16px;
+
+}
+
+.ride-history-top{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+
+}
+
+.status-badge{
+
+    padding:5px 12px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+
+}
+
+.status-badge.pending{
+
+    background:#FEF3C7;
+    color:#92400E;
+
+}
+
+.status-badge.accepted{
+
+    background:#DBEAFE;
+    color:#1E3A8A;
+
+}
+
+.status-badge.completed{
+
+    background:#DCFCE7;
+    color:#166534;
+
+}
+
+.ride-history-date{
+
+    color:#94A3B8;
+    font-size:12px;
+    margin-top:8px;
 
 }

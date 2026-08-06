@@ -9,6 +9,8 @@ require("dotenv").config();
 
 const Booking = require("./models/Booking");
 const Driver = require("./models/Driver");
+const Passenger = require("./models/Passenger");
+const SOSAlert = require("./models/SOSAlert");
 
 const app = express();
 
@@ -32,11 +34,69 @@ function verifyDriverToken(req, res, next) {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.driver = decoded; // { id, email, name }
+
+        if (decoded.role !== "driver") {
+            return res.status(401).json({ message: "Invalid token for this route" });
+        }
+
+        req.driver = decoded; // { id, email, name, role }
         next();
     } catch (error) {
         return res.status(401).json({ message: "Invalid or expired token" });
     }
+}
+
+// ==============================
+// Auth Middleware (passengers only — required)
+// ==============================
+function verifyPassengerToken(req, res, next) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "No token provided" });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        if (decoded.role !== "passenger") {
+            return res.status(401).json({ message: "Invalid token for this route" });
+        }
+
+        req.passenger = decoded; // { id, email, name, role }
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: "Invalid or expired token" });
+    }
+}
+
+// ==============================
+// Auth Middleware (passengers — optional)
+// Lets guests keep booking without a token, but attaches
+// req.passenger when a valid passenger token IS provided.
+// ==============================
+function optionalPassengerToken(req, res, next) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return next(); // guest — proceed with no passenger attached
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        if (decoded.role === "passenger") {
+            req.passenger = decoded;
+        }
+    } catch (error) {
+        // Invalid/expired token on an optional route — just proceed as a guest
+    }
+
+    next();
 }
 
 // ==============================
@@ -64,11 +124,11 @@ app.get("/api/test", (req, res) => {
 });
 
 // ==============================
-// Save a Booking
+// Save a Booking (guest OR logged-in passenger)
 // ==============================
-app.post("/api/bookings", async (req, res) => {
+app.post("/api/bookings", optionalPassengerToken, async (req, res) => {
     try {
-        const { passengerName, passengerPhone, pickup, destination, distance, fare } = req.body;
+        const { passengerName, passengerPhone, pickup, destination, distance, fare, vehicle } = req.body;
 
         if (!passengerName || !passengerPhone || !pickup || !destination || distance == null || fare == null) {
             return res.status(400).json({
@@ -80,10 +140,12 @@ app.post("/api/bookings", async (req, res) => {
         const booking = new Booking({
             passengerName,
             passengerPhone,
+            vehicle,
             pickup,
             destination,
             distance,
-            fare
+            fare,
+            passengerId: req.passenger ? req.passenger.id : null
         });
 
         await booking.save();
@@ -104,7 +166,7 @@ app.post("/api/bookings", async (req, res) => {
 });
 
 // ==============================
-// Get All Bookings
+// Get All Pending Bookings (used by the driver dashboard)
 // ==============================
 app.get("/api/bookings", async (req, res) => {
 
@@ -112,6 +174,63 @@ app.get("/api/bookings", async (req, res) => {
 
         const bookings = await Booking.find({
             status: "Pending"
+        }).sort({
+            createdAt: -1
+        });
+
+        res.json(bookings);
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Server error"
+        });
+
+    }
+
+});
+
+// ==============================
+// Get a Single Booking (used to poll status right after booking —
+// works for guests too, since the booking ID itself isn't guessable)
+// ==============================
+app.get("/api/bookings/:id", async (req, res) => {
+
+    try {
+
+        const booking = await Booking.findById(req.params.id);
+
+        if (!booking) {
+            return res.status(404).json({
+                message: "Booking not found"
+            });
+        }
+
+        res.json(booking);
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Server error"
+        });
+
+    }
+
+});
+
+// ==============================
+// Get Logged-In Passenger's Own Bookings
+// ==============================
+app.get("/api/bookings/mine/history", verifyPassengerToken, async (req, res) => {
+
+    try {
+
+        const bookings = await Booking.find({
+            passengerId: req.passenger.id
         }).sort({
             createdAt: -1
         });
@@ -244,7 +363,8 @@ app.post("/api/drivers/login", async (req, res) => {
             {
                 id: driver._id,
                 email: driver.email,
-                name: driver.name
+                name: driver.name,
+                role: "driver"
             },
             process.env.JWT_SECRET,
             {
@@ -253,14 +373,14 @@ app.post("/api/drivers/login", async (req, res) => {
         );
 
         res.json({
-    message: "Login successful",
-    token,
-    driver: {
-        id: driver._id,
-        name: driver.name,
-        email: driver.email
-    }
-});
+            message: "Login successful",
+            token,
+            driver: {
+                id: driver._id,
+                name: driver.name,
+                email: driver.email
+            }
+        });
 
     } catch (error) {
         console.error(error);
@@ -280,6 +400,162 @@ app.get("/api/drivers/me", verifyDriverToken, async (req, res) => {
         name: req.driver.name,
         email: req.driver.email
     });
+});
+
+// ==============================
+// Passenger Registration
+// ==============================
+app.post("/api/passengers/register", async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+
+        if (!name || !email || !password) {
+            return res.status(400).json({
+                message: "name, email, and password are required."
+            });
+        }
+
+        const existingPassenger = await Passenger.findOne({ email });
+
+        if (existingPassenger) {
+            return res.status(400).json({
+                message: "An account with that email already exists"
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const passenger = new Passenger({
+            name,
+            email,
+            password: hashedPassword
+        });
+
+        await passenger.save();
+
+        res.json({
+            message: "Account created successfully"
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            error: error.message
+        });
+    }
+});
+
+// ==============================
+// Passenger Login
+// ==============================
+app.post("/api/passengers/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const passenger = await Passenger.findOne({ email });
+
+        if (!passenger) {
+            return res.status(401).json({
+                message: "Invalid email or password"
+            });
+        }
+
+        const passwordMatch = await bcrypt.compare(
+            password,
+            passenger.password
+        );
+
+        if (!passwordMatch) {
+            return res.status(401).json({
+                message: "Invalid email or password"
+            });
+        }
+
+        const token = jwt.sign(
+            {
+                id: passenger._id,
+                email: passenger.email,
+                name: passenger.name,
+                role: "passenger"
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: "24h"
+            }
+        );
+
+        res.json({
+            message: "Login successful",
+            token,
+            passenger: {
+                id: passenger._id,
+                name: passenger.name,
+                email: passenger.email
+            }
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message: "Server error"
+        });
+    }
+});
+
+// ==============================
+// Get Logged-In Passenger Info
+// ==============================
+app.get("/api/passengers/me", verifyPassengerToken, async (req, res) => {
+    res.json({
+        id: req.passenger.id,
+        name: req.passenger.name,
+        email: req.passenger.email
+    });
+});
+
+// ==============================
+// Emergency SOS Alert (passenger or driver — no auth required,
+// guests must be able to trigger this too)
+// ==============================
+app.post("/api/sos", async (req, res) => {
+
+    try {
+
+        const { role, name, contact, bookingId, location } = req.body;
+
+        if (!role || (role !== "passenger" && role !== "driver")) {
+            return res.status(400).json({
+                message: "A valid role (passenger or driver) is required."
+            });
+        }
+
+        const alert = new SOSAlert({
+            role,
+            name: name || "Unknown",
+            contact: contact || "Unknown",
+            bookingId: bookingId || null,
+            location: location || null
+        });
+
+        await alert.save();
+
+        console.log(`🚨 SOS ALERT — ${role.toUpperCase()}: ${alert.name} (${alert.contact})`, location || "location unavailable");
+
+        res.status(201).json({
+            success: true,
+            message: "Alert received"
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Failed to log SOS alert"
+        });
+
+    }
+
 });
 
 // ==============================

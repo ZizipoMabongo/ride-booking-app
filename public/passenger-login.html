@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Log In — RideConnect SA</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<header class="topbar">
+
+    <div class="logo">
+        🚖 RideConnect SA
+    </div>
+
+    <div class="nav-buttons">
+
+        <a href="index.html">
+            <button class="secondary-btn">Back Home</button>
+        </a>
+
+    </div>
+
+</header>
+
+<div class="auth-page">
+
+    <div class="card auth-card">
+
+        <h3>Welcome Back</h3>
+
+        <p class="auth-subtext">
+            Log in to see your ride status and trip history.
+        </p>
+
+        <form id="loginForm">
+
+            <label>Email</label>
+            <input type="email" id="email" placeholder="Enter your email" required>
+
+            <label>Password</label>
+            <input type="password" id="password" placeholder="Enter your password" required>
+
+            <button type="submit" class="book-btn">Log In</button>
+
+        </form>
+
+        <p id="message" class="auth-message"></p>
+
+        <p class="auth-switch">
+            Don't have an account? <a href="passenger-register.html">Sign up</a>
+        </p>
+
+    </div>
+
+</div>
+
+<script src="passenger-login.js"></script>
+
+</body>
+
+</html>

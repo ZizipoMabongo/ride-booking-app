@@ -26,6 +26,14 @@ const NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse";
 let pickupSearchTimer = null;
 let destinationSearchTimer = null;
 
+let currentRidePollTimer = null;
+
+// ================================
+// Passenger auth state
+// ================================
+const passengerToken = localStorage.getItem("passengerToken");
+const passengerInfo = JSON.parse(localStorage.getItem("passengerInfo") || "null");
+
 // ================================
 // Sidebar Elements
 // ================================
@@ -40,6 +48,48 @@ const passengerPhoneInput = document.getElementById("passengerPhone");
 
 const pickupResultsEl = document.getElementById("pickupResults");
 const destinationResultsEl = document.getElementById("destinationResults");
+
+const currentRideCard = document.getElementById("currentRideCard");
+const currentRideStatus = document.getElementById("currentRideStatus");
+const currentRideDriver = document.getElementById("currentRideDriver");
+
+const passengerAuthButtons = document.getElementById("passengerAuthButtons");
+
+// Prefill passenger details if logged in
+if (passengerInfo) {
+    passengerNameInput.value = passengerInfo.name;
+}
+
+// ================================
+// Nav: show Login/Sign Up or My Rides/Logout
+// ================================
+function renderPassengerNav() {
+
+    if (passengerToken && passengerInfo) {
+
+        passengerAuthButtons.innerHTML = `
+            <a href="my-rides.html"><button class="secondary-btn">My Rides</button></a>
+            <button class="secondary-btn" id="passengerLogoutBtn">Logout</button>
+        `;
+
+        document.getElementById("passengerLogoutBtn").addEventListener("click", () => {
+            localStorage.removeItem("passengerToken");
+            localStorage.removeItem("passengerInfo");
+            window.location.reload();
+        });
+
+    } else {
+
+        passengerAuthButtons.innerHTML = `
+            <a href="passenger-login.html"><button class="secondary-btn">Log In</button></a>
+            <a href="passenger-register.html"><button class="primary-btn">Sign Up</button></a>
+        `;
+
+    }
+
+}
+
+renderPassengerNav();
 
 // Vehicle Selection
 const vehicleCards = document.querySelectorAll(".vehicle-card");
@@ -369,32 +419,31 @@ bookRideButton.addEventListener("click", async () => {
     const distance =
         Number((pickupLocation.distanceTo(destinationLocation) / 1000).toFixed(2));
 
+    let pricePerKm = 2;
 
-        let pricePerKm = 2;
+    switch (selectedVehicle.type) {
 
-switch (selectedVehicle.type) {
+        case "XL":
+            pricePerKm = 3;
+            break;
 
-    case "XL":
-        pricePerKm = 3;
-        break;
+        case "Premium":
+            pricePerKm = 5;
+            break;
 
-    case "Premium":
-        pricePerKm = 5;
-        break;
+        default:
+            pricePerKm = 2;
 
-    default:
-        pricePerKm = 2;
+    }
 
-}
-
-const fare =
-    Number((selectedVehicle.baseFare + distance * pricePerKm).toFixed(2));
+    const fare =
+        Number((selectedVehicle.baseFare + distance * pricePerKm).toFixed(2));
 
     const booking = {
 
         passengerName: passengerName,
         passengerPhone: passengerPhone,
-       
+
         vehicle: selectedVehicle.type,
 
         pickup: {
@@ -414,33 +463,36 @@ const fare =
 
     try {
 
+        const headers = {
+            "Content-Type": "application/json"
+        };
+
+        if (passengerToken) {
+            headers["Authorization"] = `Bearer ${passengerToken}`;
+        }
+
         const response = await fetch("/api/bookings", {
-
             method: "POST",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
+            headers,
             body: JSON.stringify(booking)
-
         });
 
         const result = await response.json();
 
-      if (response.ok) {
+        if (response.ok) {
 
-    alert("✅ Ride booked successfully!");
+            alert("✅ Ride booked successfully!");
 
-    loadRideHistory();
+            startTrackingCurrentRide(result.booking._id);
+            loadMyRideHistoryPreview();
 
-    console.log("Booking Saved:", result);
+            console.log("Booking Saved:", result);
 
-} else {
+        } else {
 
-    alert(result.message || "Failed to save booking.");
+            alert(result.message || "Failed to save booking.");
 
-}
+        }
 
     } catch (error) {
 
@@ -451,74 +503,78 @@ const fare =
     }
 
 });
+
 // ================================
-// Draw Saved Ride On Map
+// Current Ride tracking (works for guests AND logged-in passengers)
 // ================================
-let savedRideLayers = [];
+function startTrackingCurrentRide(bookingId) {
 
-function drawRideOnMap(booking) {
+    localStorage.setItem("lastBookingId", bookingId);
 
-    const pickup = [
-        booking.pickup.lat,
-        booking.pickup.lng
-    ];
+    currentRideCard.style.display = "block";
+    currentRideStatus.textContent = "🕒 Waiting for a driver...";
+    currentRideDriver.style.display = "none";
 
-    const destination = [
-        booking.destination.lat,
-        booking.destination.lng
-    ];
+    if (currentRidePollTimer) {
+        clearInterval(currentRidePollTimer);
+    }
 
-    // Pickup Marker
-    const pickupCircle = L.circleMarker(pickup, {
-
-        radius: 8,
-        color: "#0f766e",
-        fillColor: "#14b8a6",
-        fillOpacity: 1
-
-    })
-    .addTo(map)
-    .bindPopup(`
-        <strong>Ride #${booking._id.slice(-4)}</strong><br>
-        📍 Pickup
-    `);
-
-    savedRideLayers.push(pickupCircle);
-
-    // Destination Marker
-    const destinationCircle = L.circleMarker(destination, {
-
-        radius: 8,
-        color: "#991b1b",
-        fillColor: "#ef4444",
-        fillOpacity: 1
-
-    })
-    .addTo(map)
-    .bindPopup(`
-        <strong>Ride #${booking._id.slice(-4)}</strong><br>
-        🏁 Destination
-    `);
-
-    savedRideLayers.push(destinationCircle);
-
-    // Route Line
-    const savedRoute = L.polyline(
-        [pickup, destination],
-        {
-            color: "#7c3aed",
-            weight: 4,
-            opacity: 0.9,
-            dashArray: "10,10"
-        }
-    ).addTo(map);
-
-    savedRideLayers.push(savedRoute);
+    pollCurrentRide(bookingId);
+    currentRidePollTimer = setInterval(() => pollCurrentRide(bookingId), 5000);
 
 }
 
+async function pollCurrentRide(bookingId) {
+
+    try {
+
+        const response = await fetch(`/api/bookings/${bookingId}`);
+
+        if (!response.ok) {
+            return;
+        }
+
+        const booking = await response.json();
+
+        if (booking.status === "Accepted") {
+
+            currentRideStatus.textContent = "🚗 A driver has accepted your ride!";
+            currentRideDriver.textContent = `Driver: ${booking.driverName || "Assigned"}`;
+            currentRideDriver.style.display = "block";
+
+        } else if (booking.status === "Completed") {
+
+            currentRideStatus.textContent = "✅ Ride completed. Thanks for riding with us!";
+            currentRideDriver.style.display = "none";
+
+            if (currentRidePollTimer) {
+                clearInterval(currentRidePollTimer);
+            }
+
+        } else {
+
+            currentRideStatus.textContent = "🕒 Waiting for a driver...";
+            currentRideDriver.style.display = "none";
+
+        }
+
+    } catch (error) {
+
+        console.error("Could not refresh ride status:", error);
+
+    }
+
+}
+
+// Resume tracking the last booking if the page is reloaded (same browser)
+const lastBookingId = localStorage.getItem("lastBookingId");
+
+if (lastBookingId) {
+    startTrackingCurrentRide(lastBookingId);
+}
+
 // ================================
-// Clear Current Ride Selection
+// Clear Current Ride Selection (the map form, not the tracked booking)
 // ================================
 function clearCurrentRide() {
 
@@ -548,76 +604,47 @@ function clearCurrentRide() {
 }
 
 // ================================
-// Load Ride History
+// Ride History Preview (scoped to the logged-in passenger only —
+// guests are prompted to log in instead of seeing everyone else's rides)
 // ================================
-async function loadRideHistory() {
+async function loadMyRideHistoryPreview() {
+
+    if (!passengerToken) {
+        rideHistory.innerHTML = `<p>Log in to see your past rides.</p>`;
+        return;
+    }
 
     try {
 
-        // Remove old saved rides from the map
-        savedRideLayers.forEach(layer => {
-            map.removeLayer(layer);
+        const response = await fetch("/api/bookings/mine/history", {
+            headers: {
+                "Authorization": `Bearer ${passengerToken}`
+            }
         });
 
-        savedRideLayers = [];
+        if (!response.ok) {
+            rideHistory.innerHTML = "<p>Unable to load your rides.</p>";
+            return;
+        }
 
-        const response = await fetch("/api/bookings");
         const bookings = await response.json();
+
+        if (!bookings.length) {
+            rideHistory.innerHTML = "<p>No bookings yet.</p>";
+            return;
+        }
 
         rideHistory.innerHTML = "";
 
-        if (bookings.length === 0) {
+        bookings.slice(0, 3).forEach((booking) => {
 
-            rideHistory.innerHTML = "<p>No bookings yet.</p>";
-            return;
-
-        }
-
-        bookings.forEach((booking) => {
-
-            // Draw ride on the map
-            drawRideOnMap(booking);
-
-            // Add ride to sidebar
             rideHistory.innerHTML += `
 
                 <div class="history-card">
 
-                    <strong>Ride #${booking._id.slice(-4)}</strong>
-
-                    <br><br>
-
-                    <strong>👤 Passenger:</strong>
-                    ${booking.passengerName} (${booking.passengerPhone})
-
-                    <br><br>
-
-                    <strong>📍 Pickup</strong><br>
-                    ${booking.pickup.lat.toFixed(5)},
-                    ${booking.pickup.lng.toFixed(5)}
-
-                    <br><br>
-
-                    <strong>🏁 Destination</strong><br>
-                    ${booking.destination.lat.toFixed(5)},
-                    ${booking.destination.lng.toFixed(5)}
-
-                    <br><br>
-
-                    <strong>📏 Distance:</strong>
-                    ${booking.distance} km
-
+                    <strong>📏 ${booking.distance} km</strong> — R${booking.fare}
                     <br>
-
-                    <strong>💲 Fare:</strong>
-                    R${booking.fare}
-
-                    <br>
-
-                    <strong>📌 Status:</strong>
-                    ${booking.status}
-
-                    <hr>
+                    <small>${booking.status}</small>
 
                 </div>
 
@@ -625,15 +652,18 @@ async function loadRideHistory() {
 
         });
 
+        if (bookings.length > 3) {
+            rideHistory.innerHTML += `<a href="my-rides.html">View all rides →</a>`;
+        }
+
     } catch (error) {
 
         console.error(error);
-
-        rideHistory.innerHTML = "<p>Unable to load bookings.</p>";
+        rideHistory.innerHTML = "<p>Unable to load your rides.</p>";
 
     }
 
 }
 
-// Load saved rides when the page opens
-loadRideHistory();
+// Load history preview on page open
+loadMyRideHistoryPreview();

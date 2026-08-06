@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const bookingSchema = new mongoose.Schema({
-    // Passenger info (no account needed, just entered at booking time)
+    // Passenger info (entered at booking time — works for guests too)
     passengerName: {
         type: String,
         required: true
@@ -10,6 +10,15 @@ const bookingSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+
+    // Filled in automatically if the passenger was logged in when booking.
+    // Stays null for guest bookings.
+    passengerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Passenger",
+        default: null
+    },
+
 vehicle: {
     type: String,
     default: "Economy"

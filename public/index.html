@@ -30,7 +30,7 @@
 
     </div>
 
-    <nav class="nav-buttons">
+    <nav class="nav-buttons" id="passengerNav">
 
         <a href="index.html">
             <button class="secondary-btn">Book Ride</button>
@@ -43,6 +43,9 @@
         <a href="register.html">
             <button class="primary-btn">Become a Driver</button>
         </a>
+
+        <!-- passenger-auth-buttons filled in by script.js based on login state -->
+        <span id="passengerAuthButtons"></span>
 
     </nav>
 
@@ -89,6 +92,17 @@
             <p>
                 Book a safe and affordable ride anywhere.
             </p>
+
+        </div>
+
+        <!-- Current Ride status — appears once a booking is made -->
+        <div class="card current-ride-card" id="currentRideCard" style="display:none;">
+
+            <h3>Your Current Ride</h3>
+
+            <p id="currentRideStatus">🕒 Waiting for a driver...</p>
+
+            <p id="currentRideDriver" style="display:none;"></p>
 
         </div>
 
@@ -210,13 +224,13 @@
 
         </div>
 
-        <div class="card">
+        <div class="card" id="historyCard">
 
-            <h3>Recent Trips</h3>
+            <h3>Your Ride History</h3>
 
             <div id="rideHistory">
 
-                <p>No bookings yet.</p>
+                <p>Log in to see your past rides.</p>
 
             </div>
 
@@ -241,6 +255,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script src="script.js"></script>
+
+<script src="emergency.js" data-role="passenger"></script>
 
 </body>
 </html>
